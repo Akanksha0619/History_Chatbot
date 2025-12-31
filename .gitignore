@@ -1,0 +1,16 @@
+# Firebase / Secrets
+serviceAccountKey.json
+*.env
+.env
+# Virtual environment
+myenv/
+venv/
+env/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Secrets
+serviceAccountKey.json
+.env

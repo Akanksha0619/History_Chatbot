@@ -1,0 +1,9 @@
+openai
+python-dotenv
+fastapi 
+pydantic
+starlette
+uvicorn
+dnspython
+pydantic[email]
+firebase_admin
