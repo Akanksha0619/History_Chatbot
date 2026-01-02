@@ -1,12 +1,15 @@
 from uuid import uuid4
 from datetime import datetime
 from fastapi import HTTPException
-from database.db import db
+from services.user import (
+    create_user_db,
+    get_user_db,
+    update_user_db,
+    delete_user_db
+)
 
-COLLECTION = "client"
 
-
-def create_user_util(user):
+def create_user(user):
     user_id = str(uuid4())
 
     data = {
@@ -15,12 +18,11 @@ def create_user_util(user):
         "created_at": datetime.utcnow().isoformat()
     }
 
-    db.collection(COLLECTION).document(user_id).set(data)
-    return data
+    return create_user_db(user_id, data)
 
 
-def get_user_util(user_id: str):
-    doc = db.collection(COLLECTION).document(user_id).get()
+def get_user(user_id: str):
+    doc = get_user_db(user_id)
 
     if not doc.exists:
         raise HTTPException(status_code=404, detail="User not found")
@@ -28,27 +30,31 @@ def get_user_util(user_id: str):
     return doc.to_dict()
 
 
-def update_user_util(user_id: str, user):
-    doc_ref = db.collection(COLLECTION).document(user_id)
+def update_user(user_id: str, user):
+    doc = get_user_db(user_id)
 
-    if not doc_ref.get().exists:
+    if not doc.exists:
         raise HTTPException(status_code=404, detail="User not found")
 
     update_data = {
-        k: v for k, v in user.model_dump().items() if v is not None
+        k: v for k, v in user.model_dump().items()
+        if v is not None
     }
 
-    doc_ref.update(update_data)
+    if not update_data:
+        raise HTTPException(status_code=400, detail="No data to update")
+
+    update_user_db(user_id, update_data)
 
     return {"message": "User updated successfully"}
 
 
-def delete_user_util(user_id: str):
-    doc_ref = db.collection(COLLECTION).document(user_id)
+def delete_user(user_id: str):
+    doc = get_user_db(user_id)
 
-    if not doc_ref.get().exists:
+    if not doc.exists:
         raise HTTPException(status_code=404, detail="User not found")
 
-    doc_ref.delete()
+    delete_user_db(user_id)
 
     return {"message": "User deleted successfully"}

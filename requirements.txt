@@ -1,9 +1,9 @@
-openai
-python-dotenv
-fastapi 
-pydantic
-starlette
-uvicorn
-dnspython
-pydantic[email]
-firebase_admin
+openai==openai-2.14.0
+python-dotenv==python-dotenv-1.2.1
+fastapi==fastapi-0.128.0 
+pydantic== pydantic-2.12.5
+starlette==starlette-0.50.0
+uvicorn==uvicorn-0.40.0
+dnspython==dnspython-2.8.0
+email-validator==email-validator-2.3.0
+firebase-admin==firebase_admin-7.1.0
