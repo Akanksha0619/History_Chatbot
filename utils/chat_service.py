@@ -1,5 +1,5 @@
 from datetime import datetime
-from database.db import db
+from services.db import db
 from config.config import client
 from firebase_admin import firestore
 
