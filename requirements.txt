@@ -7,3 +7,5 @@ uvicorn==uvicorn-0.40.0
 dnspython==dnspython-2.8.0
 email-validator==email-validator-2.3.0
 firebase-admin==firebase_admin-7.1.0
+bcrypt-5.0.0 
+passlib-1.7.4

@@ -1,11 +1,13 @@
 from fastapi import APIRouter
 from models.user import UserCreate, UserUpdate
+from models.auth import LoginRequest
 from utils.user import (
     create_user,
     get_user,
     update_user,
     delete_user,
-    get_all_users
+    get_all_users,
+    
 )
 
 router = APIRouter()
@@ -34,3 +36,5 @@ def update_user_api(user_id: str, user: UserUpdate):
 @router.delete("/{user_id}")
 def delete_user_api(user_id: str):
     return delete_user(user_id)
+
+
