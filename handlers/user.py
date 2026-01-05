@@ -4,7 +4,8 @@ from utils.user import (
     create_user,
     get_user,
     update_user,
-    delete_user
+    delete_user,
+    get_all_users
 )
 
 router = APIRouter()
@@ -13,6 +14,11 @@ router = APIRouter()
 @router.post("/")
 def create_user_api(user: UserCreate):
     return create_user(user)
+
+
+@router.get("/")
+def get_users():
+    return get_all_users()
 
 
 @router.get("/{user_id}")

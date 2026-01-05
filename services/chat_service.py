@@ -5,6 +5,7 @@ from config.config import client
 from fastapi import HTTPException, status
 from models.response import APIResponse   
 
+
 def process_chat(
     user_id: str,
     message: str,
@@ -68,6 +69,7 @@ def process_chat(
             "updated_at": datetime.utcnow().isoformat()
         })
 
+    
         return APIResponse(
             success=True,
             message="Chat processed successfully",
