@@ -6,15 +6,14 @@ class UserCreate(BaseModel):
     name: str = Field(..., min_length=2)
     password: str
     email: EmailStr
-    phone: str
+    phone: int
     role: Optional[str] = "user"
 
 
 class UserUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=2)
     password: Optional[str] = None
-    email: Optional[EmailStr] = None
-    phone: Optional[str] = None
+    phone: Optional[int] = None
     role: Optional[str] = None
 
     

@@ -1,9 +1,10 @@
 from uuid import uuid4
 from datetime import datetime
-from fastapi import HTTPException, status
+from pydantic import ValidationError
+
 from models.response import APIResponse
 from models.user import UserCreate, UserUpdate
-from services.security import hash_password
+from services.security import hash_password, verify_password
 from services.user import (
     create_user_db,
     get_user_db,
@@ -15,90 +16,155 @@ from services.user import (
 
 
 
-def _get_user_or_404(user_id: str):
-    doc = get_user_db(user_id)
-    if not doc.exists:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
-    return doc
-
-
 def create_user(user: UserCreate) -> APIResponse:
-    if get_user_by_email_db(user.email):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered"
+    try:
+        if not user.name or not user.email or not user.password:
+            return APIResponse(success=False, message="Missing required fields", data={}
+            )
+
+        if get_user_by_email_db(user.email):
+            return APIResponse(
+                success=False,
+                message="Email already registered",
+                data={}
+            )
+
+        user_id = str(uuid4())
+
+        data = {
+            "id": user_id,
+            "name": user.name,
+            "email": user.email,
+            "phone": user.phone,
+            "role": user.role,
+            "password": hash_password(user.password),
+            "created_at": datetime.utcnow().isoformat()
+        }
+
+        create_user_db(user_id, data)
+
+        return APIResponse(
+            success=True,
+            message="User created successfully",
+            data={"id": user_id}
         )
 
-    user_id = str(uuid4())
+    except ValidationError as e:
+        return APIResponse(
+            success=False,
+            message="Invalid user data",
+            data=e.errors()
+        )
 
-    data = {
-        "id": user_id,
-        "name": user.name,
-        "email": user.email,
-        "phone": user.phone,
-        "role": user.role,
-        "password": hash_password(user.password),
-        "created_at": datetime.utcnow().isoformat()
-    }
+    except Exception as e:
+        return APIResponse(
+            success=False,
+            message="Failed to create user",
+            data=str(e)
+        )
 
-    create_user_db(user_id, data)
-
-    return APIResponse(
-        success=True,
-        message="User created successfully",
-        data={"id": user_id}
-    )
 
 
 def get_all_users() -> APIResponse:
+    users = get_all_users_db()
+
     return APIResponse(
         success=True,
         message="Users fetched successfully",
-        data=get_all_users_db()
+        data=users or []
     )
 
 
 def get_user(user_id: str) -> APIResponse:
-    doc = _get_user_or_404(user_id)
-    data = doc.to_dict()
-    data.pop("password", None)
+    doc = get_user_db(user_id)
 
-    return APIResponse(success=True, data=data)
+    if not doc.exists:
+        return APIResponse(
+            success=False,
+            message="User not found"
+        )
+
+    user_data = doc.to_dict()
+    user_data.pop("password", None)
+
+    return APIResponse(
+        success=True,
+        data=user_data
+    )
 
 
 def update_user(user_id: str, user: UserUpdate) -> APIResponse:
-    _get_user_or_404(user_id)
+    doc = get_user_db(user_id)
+
+    if not doc.exists:
+        return APIResponse(
+            success=False,
+            message="User not found"
+        )
 
     update_data = {
-        k: v for k, v in user.model_dump().items()
-        if v is not None
+        key: value
+        for key, value in user.model_dump().items()
+        if value is not None and key != "password"
     }
 
-    if "password" in update_data:
-        update_data["password"] = hash_password(update_data["password"])
+    if user.password:
+        update_data["password"] = hash_password(user.password)
 
     if not update_data:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="No data to update"
+        return APIResponse(
+            success=False,
+            message="No data to update"
         )
 
     update_user_db(user_id, update_data)
 
     return APIResponse(
         success=True,
-        message="User updated successfully"
+        message="User updated successfully",
+        data={"id": user_id}
     )
 
 
 def delete_user(user_id: str) -> APIResponse:
-    _get_user_or_404(user_id)
+    doc = get_user_db(user_id)
+
+    if not doc.exists:
+        return APIResponse(
+            success=False,
+            message="User not found"
+        )
+
     delete_user_db(user_id)
 
     return APIResponse(
         success=True,
         message="User deleted successfully"
+    )
+
+
+def login_user(email: str, password: str) -> APIResponse:
+    user = get_user_by_email_db(email)
+
+    if not user:
+        return APIResponse(
+            success=False,
+            message="Invalid email or password"
+        )
+
+    if not verify_password(password, user["password"]):
+        return APIResponse(
+            success=False,
+            message="Invalid email or password"
+        )
+
+    return APIResponse(
+        success=True,
+        message="Login successful",
+        data={
+            "id": user["id"],
+            "name": user["name"],
+            "email": user["email"],
+            "role": user["role"]
+        }
     )
